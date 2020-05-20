@@ -43,7 +43,6 @@ def save_response_content(response, filename):
     # clear()
     print(filename, "downloaded")
 
-
 # def clear():
 #     # for windows
 #     if os.name == "nt":
