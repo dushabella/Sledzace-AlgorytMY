@@ -1,9 +1,10 @@
 """
-    Compare OpenCV tracinkg algorithms.
+    Compare OpenCV tracking algorithms.
     Usage:
         python3.7 SOT_openCV.py --video data/pieski.mp4 --tracker tracker_version
         s -- select area for tracking
         q -- quit
+        c -- cancel the selection
 """
 
 # import the necessary packages
@@ -13,16 +14,6 @@ import argparse
 import imutils
 import time
 import cv2
-
-# mouse_click = False
-# tracker_location = (0, 0)
-# def click_track(event, x, y, flags, param):
-#     global mouse_click, tracker_location
-#     # if the left mouse button was clicked, change flag
-#     # Click is sensed as a button up
-#     if event == cv2.EVENT_LBUTTONUP:
-#         mouse_click = True
-#         tracker_location = (x, y)
 
 # construct the argument parser and parse the arguments
 def arg_parser():
@@ -59,9 +50,7 @@ def choose_tracker(args):
 	  # OpenCV object tracker objects
 	  tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
 	return(tracker)
-	# initialize the bounding box coordinates of the object we are going to track
 
-#https://stackoverflow.com/questions/53471173/selecting-static-roi todo
 
 def run_cam(args):
 	# if a video path was not supplied, grab the reference to the web cam
@@ -74,8 +63,16 @@ def run_cam(args):
 	  vs = cv2.VideoCapture(args["video"])
 	return(vs)
 
+def define_object(initBB, frame):
+    # predefine area for tracking
+    # initBB = (314, 509, 49, 50)
+    tracker.init(frame, initBB)
+    fps = FPS().start()
+    return(fps)
+
 def look_ovr_frames(vs, args, initBB):
-# loop over frames from the video stream
+
+    # loop over frames from the video stream
     while True:
       # grab the current frame, then handle if we are using a
       # VideoStream or VideoCapture object
@@ -88,7 +85,6 @@ def look_ovr_frames(vs, args, initBB):
       # frame dimensions
       frame = imutils.resize(frame, width=500)
       (H, W) = frame.shape[:2]
-
 
       # check to see if we are currently tracking an object
       if initBB is not None:
@@ -118,12 +114,69 @@ def look_ovr_frames(vs, args, initBB):
     # show the output frame
       cv2.imshow("Frame", frame)
       key = cv2.waitKey(1) & 0xFF
+
+      # if the 's' key is selected, we are going to "select" a bounding
+      # box to track
+      if key == ord("q"):
+        break
+
+      # select predefined a bounding box to track
+      else:
+        initBB = (314, 509, 49, 50)
+        fps = define_object(initBB, frame)
+
+
+def look_ovr_frames_w_selection(vs, args, initBB):
+
+    # loop over frames from the video stream
+    while True:
+      # grab the current frame, then handle if we are using a
+      # VideoStream or VideoCapture object
+      frame = vs.read()
+      frame = frame[1] if args.get("video", False) else frame
+      # check to see if we have reached the end of the stream
+      if frame is None:
+        break
+      # resize the frame (so we can process it faster) and grab the
+      # frame dimensions
+      frame = imutils.resize(frame, width=500)
+      (H, W) = frame.shape[:2]
+
+      # check to see if we are currently tracking an object
+      if initBB is not None:
+        # grab the new bounding box coordinates of the object
+        (success, box) = tracker.update(frame)
+        # check to see if the tracking was a success
+        if success:
+          (x, y, w, h) = [int(v) for v in box]
+          cv2.rectangle(frame, (x, y), (x + w, y + h),
+            (0, 255, 0), 2)
+        # update the FPS counter
+        fps.update()
+        fps.stop()
+        # initialize the set of information we'll be displaying on
+        # the frame
+        info = [
+          ("Tracker", args["tracker"]),
+          ("Success", "Yes" if success else "No"),
+          ("FPS", "{:.2f}".format(fps.fps())),
+        ]
+        # loop over the info tuples and draw them on our frame
+        for (i, (k, v)) in enumerate(info):
+          text = "{}: {}".format(k, v)
+          cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+
+    # show the output frame
+      cv2.imshow("Frame", frame)
+      key = cv2.waitKey(1) & 0xFF
+
       # if the 's' key is selected, we are going to "select" a bounding
       # box to track
       if key == ord("s"):
         # select the bounding box of the object we want to track (make
         # sure you press ENTER or SPACE after selecting the ROI)
-
+        # select_by_click todo
         initBB = cv2.selectROI("Frame", frame, fromCenter=False,
           showCrosshair=True)
         # start OpenCV object tracker using the supplied bounding box
@@ -148,10 +201,13 @@ def release_pointer(vs, args):
 
 args = arg_parser()
 tracker = choose_tracker(args)
+# initialize the bounding box coordinates of the object we are going to track
 initBB = None
 vs = run_cam(args)
 fps = None
-look_ovr_frames(vs, args, initBB)
+# tracker.init(frame, initBB) #ttodo
+# look_ovr_frames(vs, args, initBB)
+look_ovr_frames_w_selection(vs, args, initBB)
 release_pointer(vs, args)
 
 if __name__ == "__main__":
