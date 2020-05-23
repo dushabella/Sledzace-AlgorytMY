@@ -16,3 +16,15 @@ if __name__ == "__main__":
     for file_id, filename in videos.items():
         download(file_id, filename)
 
+    args = {"video": "data/pieski2.mp4", "tracker": "boosting"}
+    tracker = SOT_openCV.choose_tracker(args)
+    initBB = None
+    vs = SOT_openCV.choose_video(args)
+    fps = None
+
+    areas = {"pieski_mordka_S": (236, 386, 39, 44),
+             "pieski_ogon_M":  (107, 359, 64, 59),
+             "pieski_caly_L": (179, 346, 201, 190)}
+
+    SOT_openCV.look_ovr_frames(vs, args, initBB, areas["pieski_ogon_M"])
+    SOT_openCV.release_pointer(vs, args)

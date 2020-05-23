@@ -1,13 +1,15 @@
 """
-    Compare OpenCV tracking algorithms.
-    Usage:
-        python3.7 SOT_openCV.py --video data/pieski.mp4 --tracker tracker_version
-        s -- select area for tracking
-        q -- quit
-        c -- cancel the selection
+    Śledzenie pojedycznego obiektu na pliku wideo lub obrazie z kamerki
+    Wykorzystywana biblioteka OpenCV i wbudowane 7 algorytmów śledzących
+    Sposób użycia:
+    python3.7 cvtrackersot.py --video nazwapliku.mp4 --tracker algorytm
+        s -- wybierz obszar śledzenia
+        q -- zakończ śledzenie i zamknij okno
+        c -- anuluj zaznaczenie
+    np. python3.7 SOT_openCV.py --video data/pieski.mp4 --tracker mil
 """
 
-# import the necessary packages
+# import wymaganych pakietów
 from imutils.video import VideoStream
 from imutils.video import FPS
 import argparse
@@ -15,7 +17,7 @@ import imutils
 import time
 import cv2
 
-# construct the argument parser and parse the arguments
+# przekazywanie argumentów
 def arg_parser():
 	ap = argparse.ArgumentParser()
 	ap.add_argument("-v", "--video", type=str,
@@ -26,17 +28,15 @@ def arg_parser():
 	return(args)
 
 def choose_tracker(args):
-	# extract the OpenCV version info
+	# uzyskanie informacji o wersji OpenCV (dla różnych wersji inaczej tworzy się instancje trackerów)
 	(major, minor) = cv2.__version__.split(".")[:2]
-	# if we are using OpenCV 3.2 OR BEFORE, we can use a special factory
-	# function to create our object tracker
+	# dla wersji OpenCV 3.2 albo niższej
 	if int(major) == 3 and int(minor) < 3:
 	  tracker = cv2.Tracker_create(args["tracker"].upper())
-	# otherwise, for OpenCV 3.3 OR NEWER, we need to explicity call the
-	# approrpiate object tracker constructor:
+	# dla wersji OpenCV 3.3 lub nowszej należy jawnie odwołać się do kontruktora danego trackera
 	else:
-	  # initialize a dictionary that maps strings to their corresponding
-	  # OpenCV object tracker implementations
+    # tworzenie słownika zawierającego nazwy i korespondujące konstruktory
+    # lista dostępnych w OpenCV algorytmów śledzących
 	  OPENCV_OBJECT_TRACKERS = {
 		"csrt": cv2.TrackerCSRT_create,
 		"kcf": cv2.TrackerKCF_create,
@@ -46,160 +46,146 @@ def choose_tracker(args):
 		"medianflow": cv2.TrackerMedianFlow_create,
 		"mosse": cv2.TrackerMOSSE_create
 	  }
-	  # grab the appropriate object tracker using our dictionary of
-	  # OpenCV object tracker objects
+	  # Wybór danego trackera w zależności od przekazanego argumentu
 	  tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
 	return(tracker)
 
 
 def choose_video(args):
-	# if a video path was not supplied, grab the reference to the web cam
+	# jeżeli nie została przekazana ścieżka do pliku wideo, obraz brany będzie z kamerki
 	if not args.get("video", False):
 	  print("[INFO] starting video stream...", args)
 	  vs = VideoStream(src=0).start()
 	  time.sleep(1.0)
-	# otherwise, grab a reference to the video file
+	# w innym razie - brany jest plik wideo wskazany jako argument
 	else:
 	  vs = cv2.VideoCapture(args["video"])
 	return(vs)
 
 def define_object(initBB, frame):
-    # predefine area for tracking
     tracker.init(frame, initBB)
+    # inicjalizacja licznika FPS
     fps = FPS().start()
     return(fps)
 
 def look_ovr_frames(vs, args, initBB, areas):
-    # loop over frames from the video stream
+    # pętla po klatkach pliku wideo
     while True:
-      # grab the current frame, then handle if we are using a
-      # VideoStream or VideoCapture object
       frame = vs.read()
       frame = frame[1] if args.get("video", False) else frame
-      # check to see if we have reached the end of the stream
+      # sprawdzenie czy nie doszliśmy do końca pliku
       if frame is None:
         break
-      # resize the frame (so we can process it faster) and grab the
-      # frame dimensions
+      # zmiana rozmiaru ramki, uzyskanie jej wymiarów
       frame = imutils.resize(frame, width=500)
       (H, W) = frame.shape[:2]
 
-      # check to see if we are currently tracking an object
+      # sprawdzenie, czy już czegoś nie śledzimy
       if initBB is not None:
-        # grab the new bounding box coordinates of the object
+        # wzięcie nowego bounding boxa (jego współrzędnych) dla obiektu
         (success, box) = tracker.update(frame)
         # check to see if the tracking was a success
         if success:
           (x, y, w, h) = [int(v) for v in box]
           cv2.rectangle(frame, (x, y), (x + w, y + h),
             (0, 255, 0), 2)
-        # update the FPS counter
+        # update licznika fps
         fps.update()
         fps.stop()
-        # initialize the set of information we'll be displaying on
-        # the frame
+        # informacje wyświetlane na ekranie
         info = [
           ("Tracker", args["tracker"]),
           ("Success", "Yes" if success else "No"),
           ("FPS", "{:.2f}".format(fps.fps())),
         ]
-        # loop over the info tuples and draw them on our frame
+        # format i wyświetlanie informacji na ekranie
         for (i, (k, v)) in enumerate(info):
           text = "{}: {}".format(k, v)
           cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-    # show the output frame
+    # wyświetlanie klatki
       cv2.imshow("Frame", frame)
       key = cv2.waitKey(1) & 0xFF
 
-      # if the 's' key is selected, we are going to "select" a bounding
-      # box to track
+      # jeżeli naciśnięty został przycisk 'q' program wyjdzie z pętli
       if key == ord("q"):
         break
 
-      # select predefined a bounding box to track
+      # pobierz obszar do śledzenia ze słownika areas
       else:
         initBB = areas
         fps = define_object(initBB, frame)
 
 
 def look_ovr_frames_w_selection(vs, args, initBB):
-    # loop over frames from the video stream
+    # pętla po klatkach pliku wideo
     while True:
-      # grab the current frame, then handle if we are using a
-      # VideoStream or VideoCapture object
       frame = vs.read()
       frame = frame[1] if args.get("video", False) else frame
-      # check to see if we have reached the end of the stream
+      # sprawdzenie czy nie doszliśmy do końca pliku
       if frame is None:
         break
-      # resize the frame (so we can process it faster) and grab the
-      # frame dimensions
+      # zmiana rozmiaru ramki, uzyskanie jej wymiarów
       frame = imutils.resize(frame, width=500)
       (H, W) = frame.shape[:2]
 
-      # check to see if we are currently tracking an object
+      # sprawdzenie, czy już czegoś nie śledzimy
       if initBB is not None:
-        # grab the new bounding box coordinates of the object
+        # wzięcie nowego bounding boxa (jego współrzędnych) dla obiektu
         (success, box) = tracker.update(frame)
-        # check to see if the tracking was a success
+        # sprawdzenie, czy śledzenie powiodło się
         if success:
           (x, y, w, h) = [int(v) for v in box]
           cv2.rectangle(frame, (x, y), (x + w, y + h),
             (0, 255, 0), 2)
-        # update the FPS counter
+        # update licznika fps
         fps.update()
         fps.stop()
-        # initialize the set of information we'll be displaying on
-        # the frame
+        # informacje wyświetlane na ekranie
         info = [
           ("Tracker", args["tracker"]),
           ("Success", "Yes" if success else "No"),
           ("FPS", "{:.2f}".format(fps.fps())),
         ]
-        # loop over the info tuples and draw them on our frame
+        # format i wyświetlanie informacji na ekranie
         for (i, (k, v)) in enumerate(info):
           text = "{}: {}".format(k, v)
           cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-    # show the output frame
+      # wyświetlanie klatki
       cv2.imshow("Frame", frame)
       key = cv2.waitKey(1) & 0xFF
 
-      # if the 's' key is selected, we are going to "select" a bounding
-      # box to track
+      # jeżeli naciśnięty jest przycisk 's' to będziemy zaznaczać bb do śledzenia
       if key == ord("s"):
-        # select the bounding box of the object we want to track (make
-        # sure you press ENTER or SPACE after selecting the ROI)
+        # wybranie obiektu do śledzenia, wybór zatwierdzany SPACJĄ lub ENTEREM
         initBB = cv2.selectROI("Frame", frame, fromCenter=False,
           showCrosshair=True)
         print("initBB: ", initBB)
-        # start OpenCV object tracker using the supplied bounding box
-        # coordinates, then start the FPS throughput estimator as well
+        # rozpoczęcie śledzenia z wybranym bb, rozpoczęcie obliczeń FPS
         tracker.init(frame, initBB)
         fps = FPS().start()
 
-      # if the `q` key was pressed, break from the loop
+      # jeżeli naciśnięty został przycisk 'q' program wyjdzie z pętli
       elif key == ord("q"):
         break
 
 
 def release_pointer(vs, args):
-    # if we are using a webcam, release the pointer
+    # przy wykorzystaniu kamerki, uwolnienie wskaźnika
     if not args.get("video", False):
       vs.stop()
-    # otherwise, release the file pointer
     else:
       vs.release()
-    # close all windows
+    # zamknij wszystkie okna
     cv2.destroyAllWindows()
 
 args = arg_parser()
 tracker = choose_tracker(args)
 print("tracker ", tracker)
-# initialize the bounding box coordinates of the object we are going to track
+# Inicjowanie bounding boxa obiektu, który chcemy śledzić (none ponieważ wybieramy bb poprzez zaznaczenie na ekranie)
 initBB = None
 vs = choose_video(args)
 print("vs: ", vs)
