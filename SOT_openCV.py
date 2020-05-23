@@ -52,10 +52,10 @@ def choose_tracker(args):
 	return(tracker)
 
 
-def run_cam(args):
+def choose_video(args):
 	# if a video path was not supplied, grab the reference to the web cam
 	if not args.get("video", False):
-	  print("[INFO] starting video stream...")
+	  print("[INFO] starting video stream...", args)
 	  vs = VideoStream(src=0).start()
 	  time.sleep(1.0)
 	# otherwise, grab a reference to the video file
@@ -65,13 +65,11 @@ def run_cam(args):
 
 def define_object(initBB, frame):
     # predefine area for tracking
-    # initBB = (314, 509, 49, 50)
     tracker.init(frame, initBB)
     fps = FPS().start()
     return(fps)
 
-def look_ovr_frames(vs, args, initBB):
-
+def look_ovr_frames(vs, args, initBB, areas):
     # loop over frames from the video stream
     while True:
       # grab the current frame, then handle if we are using a
@@ -122,12 +120,11 @@ def look_ovr_frames(vs, args, initBB):
 
       # select predefined a bounding box to track
       else:
-        initBB = (314, 509, 49, 50)
+        initBB = areas
         fps = define_object(initBB, frame)
 
 
 def look_ovr_frames_w_selection(vs, args, initBB):
-
     # loop over frames from the video stream
     while True:
       # grab the current frame, then handle if we are using a
@@ -176,9 +173,9 @@ def look_ovr_frames_w_selection(vs, args, initBB):
       if key == ord("s"):
         # select the bounding box of the object we want to track (make
         # sure you press ENTER or SPACE after selecting the ROI)
-        # select_by_click todo
         initBB = cv2.selectROI("Frame", frame, fromCenter=False,
           showCrosshair=True)
+        print("initBB: ", initBB)
         # start OpenCV object tracker using the supplied bounding box
         # coordinates, then start the FPS throughput estimator as well
         tracker.init(frame, initBB)
@@ -201,13 +198,19 @@ def release_pointer(vs, args):
 
 args = arg_parser()
 tracker = choose_tracker(args)
+print("tracker ", tracker)
 # initialize the bounding box coordinates of the object we are going to track
 initBB = None
-vs = run_cam(args)
+vs = choose_video(args)
+print("vs: ", vs)
 fps = None
-# tracker.init(frame, initBB) #ttodo
-# look_ovr_frames(vs, args, initBB)
-look_ovr_frames_w_selection(vs, args, initBB)
+
+areas = {"pieski_mordka_S": (236, 386, 39, 44),
+         "pieski_ogon_M":  (107, 359, 64, 59),
+         "pieski_caly_L": (179, 346, 201, 190)}
+
+look_ovr_frames(vs, args, initBB, areas["pieski_ogon_M"])
+# look_ovr_frames_w_selection(vs, args, initBB)
 release_pointer(vs, args)
 
 if __name__ == "__main__":
