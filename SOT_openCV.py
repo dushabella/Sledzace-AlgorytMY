@@ -200,35 +200,35 @@ areas = {"pieski_mordka_S": (236, 386, 39, 44),
          "pieski_ogon_M": (107, 359, 64, 59),
          "pieski_caly_L": (179, 346, 201, 190)}
 
-# american_pharoah.mp4
-areas = {"american_jezdziec_S": (433, 121, 22, 21),
-         "american_kon_M": (418, 120, 74, 44),
-         "american_zbiorowe_L": (120, 115, 160, 51)}
-
-# dashcam_boston.mp4
-areas = {"dashcam_swiatla_S": (430, 112, 24, 24),
-         "dashcam_suv_M": (403, 181, 38, 34),
-         "dashcam_honda_L": (317, 177, 64, 60)}
-
-# drone.mp4
-areas = {"drone_bialy_S": (329, 49, 21, 20),
-         "drone_szary_M": (224, 142, 75, 64),
-         "drone_szary_L": (161, 132, 206, 87)}
-
-# nascar_01.mp4
-areas = {"nascar1_zielony_S": (250, 123, 37, 23),
-         "nascar1_zielony_M": (240, 115, 57, 41),
-         "nascar_zielony_L": (220, 97, 102, 73)}
-
-# nascar_02.mp4
-areas = {"nascar2_zielony_S": (208, 169, 40, 45),
-         "nascar2_zielony_M": (200, 166, 62, 60),
-         "nascar2_zielony_L": (187, 146, 97, 93)}
-
-# race.mp4
-areas = {"race_zawodnik_S": (187, 124, 30, 46),
-         "race_zawodnik_M": (175, 122, 48, 98),
-         "race_zawodnik_L": (168, 119, 73, 115)}
+# # american_pharoah.mp4
+# areas = {"american_jezdziec_S": (433, 121, 22, 21),
+#          "american_kon_M": (418, 120, 74, 44),
+#          "american_zbiorowe_L": (120, 115, 160, 51)}
+#
+# # dashcam_boston.mp4
+# areas = {"dashcam_swiatla_S": (430, 112, 24, 24),
+#          "dashcam_suv_M": (403, 181, 38, 34),
+#          "dashcam_honda_L": (317, 177, 64, 60)}
+#
+# # drone.mp4
+# areas = {"drone_bialy_S": (329, 49, 21, 20),
+#          "drone_szary_M": (224, 142, 75, 64),
+#          "drone_szary_L": (161, 132, 206, 87)}
+#
+# # nascar_01.mp4
+# areas = {"nascar1_zielony_S": (250, 123, 37, 23),
+#          "nascar1_zielony_M": (240, 115, 57, 41),
+#          "nascar_zielony_L": (220, 97, 102, 73)}
+#
+# # nascar_02.mp4
+# areas = {"nascar2_zielony_S": (208, 169, 40, 45),
+#          "nascar2_zielony_M": (200, 166, 62, 60),
+#          "nascar2_zielony_L": (187, 146, 97, 93)}
+#
+# # race.mp4
+# areas = {"race_zawodnik_S": (187, 124, 30, 46),
+#          "race_zawodnik_M": (175, 122, 48, 98),
+#          "race_zawodnik_L": (168, 119, 73, 115)}
 
 look_ovr_frames(vs, args, initBB, areas["pieski_ogon_M"])
 # look_ovr_frames_w_selection(vs, args, initBB)
