@@ -52,7 +52,7 @@ def choose_tracker(args):
 
 
 def choose_video(args):
-    print("choose - video args[video]: ", args["video"])
+    # print("choose - video args[video]: ", args["video"])
     if args.get("video"): # podano ścieżkę do pliku
         return cv2.VideoCapture(args["video"])
     else: # obraz z kamerki
@@ -219,8 +219,6 @@ areas = {"pieski_mordka_S": (236, 386, 39, 44),
 # areas = {"race_zawodnik_S": (187, 124, 30, 46),
 #          "race_zawodnik_M": (175, 122, 48, 98),
 #          "race_zawodnik_L": (168, 119, 73, 115)}
-
-
 
 if __name__ == "__main__":
     args = arg_parser()
