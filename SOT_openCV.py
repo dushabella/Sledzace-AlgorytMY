@@ -61,6 +61,16 @@ def choose_video(args):
         time.sleep(1.0)
     return vs
 
+# def choose_video(args):
+#     if not args.get("video", False):
+#         print("[INFO] starting video stream...", args)
+#         vs = VideoStream(src=0).start()
+#         time.sleep(1.0)
+#     # w innym razie - brany jest plik wideo wskazany jako argument
+#     else:
+#         vs = cv2.VideoCapture(args["video"])
+#     return (vs)
+
 def define_object(initBB, frame, tracker):
     tracker.init(frame, initBB)
     # inicjalizacja licznika FPS

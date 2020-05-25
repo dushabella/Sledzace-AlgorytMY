@@ -48,19 +48,43 @@ areas = {
     # "race_zawodnik_M": (175, 122, 48, 98),
     # "race_zawodnik_L": (168, 119, 73, 115)}
 
+trackers = [
+    "csrt",
+    "kcf",
+    "boosting",
+    "mil",
+    "tld",
+    "medianflow",
+    "mosse"]
+
+args = {"video": "data/pieski2.mp4", "tracker": "mil"}
+
 if __name__ == "__main__":
 
     # update the video files
     for file_id, filename in videos.items():
         download(file_id, filename)
 
-    # run tracking for the particular video
-    for name, boundingbox in areas.items():
-        args = {"video": "data/pieski2.mp4", "tracker": "mil"}
-        tracker = SOT_openCV.choose_tracker(args)
-        initBB = None
-        vs = SOT_openCV.choose_video(args)
-        fps = None
+    for tracker in trackers:
+        args["tracker"] = tracker
+        print(args)
+        # run tracking for the particular video
+        for name, boundingbox in areas.items():
+            tracker = SOT_openCV.choose_tracker(args)
+            initBB = None
+            vs = SOT_openCV.choose_video(args)
+            fps = None
 
-        SOT_openCV.look_ovr_frames(vs, args, initBB, tracker, boundingbox)
-        SOT_openCV.release_pointer(vs, args)
+            SOT_openCV.look_ovr_frames(vs, args, initBB, tracker, boundingbox)
+            SOT_openCV.release_pointer(vs, args)
+
+    # run tracking for the particular video
+    # for name, boundingbox in areas.items():
+    #     args = {"video": "data/pieski2.mp4", "tracker": "mil"}
+    #     tracker = SOT_openCV.choose_tracker(args)
+    #     initBB = None
+    #     vs = SOT_openCV.choose_video(args)
+    #     fps = None
+    #
+    #     SOT_openCV.look_ovr_frames(vs, args, initBB, tracker, boundingbox)
+    #     SOT_openCV.release_pointer(vs, args)
