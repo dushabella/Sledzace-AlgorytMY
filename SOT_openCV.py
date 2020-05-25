@@ -28,7 +28,6 @@ def arg_parser():
     return(args)
 
 def choose_tracker(args):
-    print("args[video]: ", args["video"])
     # uzyskanie informacji o wersji OpenCV (dla różnych wersji inaczej tworzy się instancje trackerów)
     (major, minor) = cv2.__version__.split(".")[:2]
     # dla wersji OpenCV 3.2 albo niższej
@@ -49,29 +48,26 @@ def choose_tracker(args):
         }
         # Wybór danego trackera w zależności od przekazanego argumentu
         tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
-        print("args[tracker]: ", args["tracker"])
-        print("args[video]: ", args["video"])
     return(tracker)
 
 
 def choose_video(args):
-    # jeżeli nie została przekazana ścieżka do pliku wideo, obraz brany będzie z kamerki
-    if args.get("video", False):
-        print("[INFO] starting video stream...", args)
+    print("choose - video args[video]: ", args["video"])
+    if args.get("video"): # podano ścieżkę do pliku
+        return cv2.VideoCapture(args["video"])
+    else: # obraz z kamerki
+        print("[INFO] starting video stream...")
         vs = VideoStream(src=0).start()
         time.sleep(1.0)
-    # w innym razie - brany jest plik wideo wskazany jako argument
-    else:
-        vs = cv2.VideoCapture(args["video"])
-    return(vs)
+    return vs
 
-def define_object(initBB, frame):
+def define_object(initBB, frame, tracker):
     tracker.init(frame, initBB)
     # inicjalizacja licznika FPS
     fps = FPS().start()
     return(fps)
 
-def look_ovr_frames(vs, args, initBB, areas):
+def look_ovr_frames(vs, args, initBB, tracker, areas):
     # pętla po klatkach pliku wideo
     while True:
       frame = vs.read()
@@ -118,10 +114,10 @@ def look_ovr_frames(vs, args, initBB, areas):
       # pobierz obszar do śledzenia ze słownika areas
       else:
         initBB = areas
-        fps = define_object(initBB, frame)
+        fps = define_object(initBB, frame, tracker)
 
 
-def look_ovr_frames_w_selection(vs, args, initBB):
+def look_ovr_frames_w_selection(vs, args, initBB, tracker):
     # pętla po klatkach pliku wideo
     while True:
       frame = vs.read()
@@ -185,18 +181,9 @@ def release_pointer(vs, args):
     # zamknij wszystkie okna
     cv2.destroyAllWindows()
 
-args = arg_parser()
-tracker = choose_tracker(args)
-print("tracker ", tracker)
-# Inicjowanie bounding boxa obiektu, który chcemy śledzić (none ponieważ wybieramy bb poprzez zaznaczenie na ekranie)
-initBB = None
-vs = choose_video(args)
-print("vs: ", vs)
-fps = None
-
 """
     Zbiór współrzędnych initBB dla projektu zespołowego
-    Format współrzędnych ( x y w h)
+    Format współrzędnych (x y w h)
 """
 # pieski2.mp4
 areas = {"pieski_mordka_S": (236, 386, 39, 44),
@@ -233,9 +220,17 @@ areas = {"pieski_mordka_S": (236, 386, 39, 44),
 #          "race_zawodnik_M": (175, 122, 48, 98),
 #          "race_zawodnik_L": (168, 119, 73, 115)}
 
-look_ovr_frames(vs, args, initBB, areas["pieski_ogon_M"])
-# look_ovr_frames_w_selection(vs, args, initBB)
-release_pointer(vs, args)
+
 
 if __name__ == "__main__":
-    print("loleells")
+    args = arg_parser()
+    tracker = choose_tracker(args)
+    # Inicjowanie bounding boxa obiektu, który chcemy śledzić (none ponieważ wybieramy bb poprzez zaznaczenie na ekranie)
+    initBB = None
+    vs = choose_video(args)
+    fps = None
+
+    # look_ovr_frames(vs, args, initBB, tracker, areas["pieski_ogon_M"])
+    look_ovr_frames_w_selection(vs, args, initBB, tracker)
+    release_pointer(vs, args)
+    print("lolells")

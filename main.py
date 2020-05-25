@@ -26,5 +26,5 @@ if __name__ == "__main__":
              "pieski_ogon_M":  (107, 359, 64, 59),
              "pieski_caly_L": (179, 346, 201, 190)}
 
-    SOT_openCV.look_ovr_frames(vs, argss, initBB, areas["pieski_ogon_M"])
+    SOT_openCV.look_ovr_frames(vs, argss, initBB, tracker, areas["pieski_ogon_M"])
     SOT_openCV.release_pointer(vs, argss)
