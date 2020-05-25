@@ -19,48 +19,51 @@ import cv2
 
 # przekazywanie argumentów
 def arg_parser():
-	ap = argparse.ArgumentParser()
-	ap.add_argument("-v", "--video", type=str,
-	  help="path to input video file")
-	ap.add_argument("-t", "--tracker", type=str, default="kcf",
-	  help="OpenCV object tracker type")
-	args = vars(ap.parse_args())
-	return(args)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-v", "--video", type=str,
+      help="path to input video file")
+    ap.add_argument("-t", "--tracker", type=str, default="kcf",
+      help="OpenCV object tracker type")
+    args = vars(ap.parse_args())
+    return(args)
 
 def choose_tracker(args):
-	# uzyskanie informacji o wersji OpenCV (dla różnych wersji inaczej tworzy się instancje trackerów)
-	(major, minor) = cv2.__version__.split(".")[:2]
-	# dla wersji OpenCV 3.2 albo niższej
-	if int(major) == 3 and int(minor) < 3:
-	  tracker = cv2.Tracker_create(args["tracker"].upper())
-	# dla wersji OpenCV 3.3 lub nowszej należy jawnie odwołać się do kontruktora danego trackera
-	else:
+    print("args[video]: ", args["video"])
+    # uzyskanie informacji o wersji OpenCV (dla różnych wersji inaczej tworzy się instancje trackerów)
+    (major, minor) = cv2.__version__.split(".")[:2]
+    # dla wersji OpenCV 3.2 albo niższej
+    if int(major) == 3 and int(minor) < 3:
+        tracker = cv2.Tracker_create(args["tracker"].upper())
+    # dla wersji OpenCV 3.3 lub nowszej należy jawnie odwołać się do kontruktora danego trackera
+    else:
     # tworzenie słownika zawierającego nazwy i korespondujące konstruktory
     # lista dostępnych w OpenCV algorytmów śledzących
-	  OPENCV_OBJECT_TRACKERS = {
-		"csrt": cv2.TrackerCSRT_create,
-		"kcf": cv2.TrackerKCF_create,
-		"boosting": cv2.TrackerBoosting_create,
-		"mil": cv2.TrackerMIL_create,
-		"tld": cv2.TrackerTLD_create,
-		"medianflow": cv2.TrackerMedianFlow_create,
-		"mosse": cv2.TrackerMOSSE_create
-	  }
-	  # Wybór danego trackera w zależności od przekazanego argumentu
-	  tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
-	return(tracker)
+        OPENCV_OBJECT_TRACKERS = {
+            "csrt": cv2.TrackerCSRT_create,
+            "kcf": cv2.TrackerKCF_create,
+            "boosting": cv2.TrackerBoosting_create,
+            "mil": cv2.TrackerMIL_create,
+            "tld": cv2.TrackerTLD_create,
+            "medianflow": cv2.TrackerMedianFlow_create,
+            "mosse": cv2.TrackerMOSSE_create
+        }
+        # Wybór danego trackera w zależności od przekazanego argumentu
+        tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
+        print("args[tracker]: ", args["tracker"])
+        print("args[video]: ", args["video"])
+    return(tracker)
 
 
 def choose_video(args):
-	# jeżeli nie została przekazana ścieżka do pliku wideo, obraz brany będzie z kamerki
-	if not args.get("video", False):
-	  print("[INFO] starting video stream...", args)
-	  vs = VideoStream(src=0).start()
-	  time.sleep(1.0)
-	# w innym razie - brany jest plik wideo wskazany jako argument
-	else:
-	  vs = cv2.VideoCapture(args["video"])
-	return(vs)
+    # jeżeli nie została przekazana ścieżka do pliku wideo, obraz brany będzie z kamerki
+    if args.get("video", False):
+        print("[INFO] starting video stream...", args)
+        vs = VideoStream(src=0).start()
+        time.sleep(1.0)
+    # w innym razie - brany jest plik wideo wskazany jako argument
+    else:
+        vs = cv2.VideoCapture(args["video"])
+    return(vs)
 
 def define_object(initBB, frame):
     tracker.init(frame, initBB)
@@ -235,4 +238,4 @@ look_ovr_frames(vs, args, initBB, areas["pieski_ogon_M"])
 release_pointer(vs, args)
 
 if __name__ == "__main__":
-	print("loleells")
+    print("loleells")
