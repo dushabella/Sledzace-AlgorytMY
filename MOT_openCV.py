@@ -17,35 +17,39 @@ import time
 import cv2
 
 # przekazywanie argumentów
-ap = argparse.ArgumentParser()
-ap.add_argument("-v", "--video", type=str,
-				help="path to input video file")
-ap.add_argument("-t", "--tracker", type=str, default="kcf",
-				help="OpenCV object tracker type")
-args = vars(ap.parse_args())
-return (args)
+def arg_parser():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-v", "--video", type=str,
+      help="path to input video file")
+    ap.add_argument("-t", "--tracker", type=str, default="kcf",
+      help="OpenCV object tracker type")
+    args = vars(ap.parse_args())
+    return(args)
 
+args = arg_parser()
 
+def choose_tracker(args):
+	# tworzenie słownika zawierającego nazwy i korespondujące konstruktory
+	# lista dostępnych w OpenCV algorytmów śledzących
+	OPENCV_OBJECT_TRACKERS = {
+		"csrt": cv2.TrackerCSRT_create,
+		"kcf": cv2.TrackerKCF_create,
+		"boosting": cv2.TrackerBoosting_create,
+		"mil": cv2.TrackerMIL_create,
+		"tld": cv2.TrackerTLD_create,
+		"medianflow": cv2.TrackerMedianFlow_create,
+		"mosse": cv2.TrackerMOSSE_create
+	}
+	if args["tracker"] not in OPENCV_OBJECT_TRACKERS:
+		print("Wybrany algorytm śledzący nie istnieje!")
+		exit()
+	else:
+		# tworzenie specjalnego OpenCV multi-trackera
+		trackers = cv2.MultiTracker_create()
+	return OPENCV_OBJECT_TRACKERS, trackers
 
-#to sobie można zakomentować i i tak wpisywać te trackery w argumencie bo i tak nigdzie to nie jest brane pod uwage -- to iluzja xd
-tworzenie słownika zawierającego nazwy i korespondujące konstruktory
-lista dostępnych w OpenCV algorytmów śledzących
-OPENCV_OBJECT_TRACKERS = {
-	"csrt": cv2.TrackerCSRT_create,
-	"kcf": cv2.TrackerKCF_create,
-	"boosting": cv2.TrackerBoosting_create,
-	"mil": cv2.TrackerMIL_create,
-	"tld": cv2.TrackerTLD_create,
-	"medianflow": cv2.TrackerMedianFlow_create,
-	"mosse": cv2.TrackerMOSSE_create
-}
-
-
+OPENCV_OBJECT_TRACKERS, trackers = choose_tracker(args)
 fps = FPS().start()
-
-# tworzenie specjalnego OpenCV multi-trackera
-trackers = cv2.MultiTracker_create()
-print(trackers)
 
 # jeżeli nie została przekazana ścieżka do pliku wideo, obraz brany będzie z kamerki
 if not args.get("video", False):
@@ -94,7 +98,6 @@ while True:
 		cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
 		cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 20), 2)
 
-
 	# wyświetlanie klatki
 	cv2.imshow("Frame", frame)
 	key = cv2.waitKey(1) & 0xFF
@@ -104,7 +107,7 @@ while True:
 		# wybranie obiektu do śledzenia, WYMAGA NACIŚNIĘCIA SPACJI PO WYBORZE
 		box = cv2.selectROI("Frame", frame, fromCenter=False,
 			showCrosshair=True)
-		#fps = FPS().start()
+		# fps = FPS().start()
 		# utworzenie nowego trackera dla nowego bb i dodanie go do multi-trackera
 		tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
 		trackers.add(tracker, frame, box)
@@ -123,5 +126,5 @@ else:
 # zamknij wszystkie okna
 cv2.destroyAllWindows()
 
-# if __name__ == "__main__":
-# 	print("hej")
+if __name__ == "__main__":
+	print("bo")
