@@ -15,6 +15,7 @@ import argparse
 import imutils
 import time
 import cv2
+from sty import fg, bg, ef, rs
 
 # przekazywanie argumentów
 def arg_parser():
@@ -44,16 +45,10 @@ def choose_tracker(args):
 	else:
 		# tworzenie specjalnego OpenCV multi-trackera
 		trackers = cv2.MultiTracker_create()
-	return OPENCV_OBJECT_TRACKERS, trackers
+	fps = FPS().start()
+	return OPENCV_OBJECT_TRACKERS, trackers, fps
 
 def choose_video(args):
-    # if args.get("video"): # podano ścieżkę do pliku
-    #     return cv2.VideoCapture(args["video"])
-    # else: # obraz z kamerki
-    #     print("[INFO] starting video stream...")
-    #     vs = VideoStream(src=0).start()
-    #     time.sleep(1.0)
-    #
 	# jeżeli nie została przekazana ścieżka do pliku wideo, obraz brany będzie z kamerki
 	if not args.get("video", False):
 		print("[INFO] starting video stream...")
@@ -64,8 +59,16 @@ def choose_video(args):
 		vs = cv2.VideoCapture(args["video"])
 	return vs
 
-def look_ovr_frames_w_selection(vs, args, OPENCV_OBJECT_TRACKERS, trackers):
+def avg_fps(avg: float, fps: float) -> float:
+# counts avg value of fps
+    if avg == 0:
+        return fps
+    else:
+        return (avg + fps)/2
+
+def look_ovr_frames(vs, fps, args, OPENCV_OBJECT_TRACKERS, trackers, areas):
 	# pętla po klatkach pliku wideo
+	av_fps = 0
 	while True:
 		frame = vs.read()
 		frame = frame[1] if args.get("video", False) else frame
@@ -84,6 +87,70 @@ def look_ovr_frames_w_selection(vs, args, OPENCV_OBJECT_TRACKERS, trackers):
 		# update licznika fps
 		fps.update()
 		fps.stop()
+		av_fps = avg_fps(av_fps, fps.fps())
+		# informacje wyświetlane na ekranie
+		info = [
+		  ("Algorytm", args["tracker"]),
+		  ("Sukces", "Tak" if success else "Nie"),
+		  ("FPS", "{:.2f}".format(fps.fps())),
+		]
+		# format i wyświetlanie informacji na ekranie
+		for (i, (k, v)) in enumerate(info):
+			text = "{}: {}".format(k, v)
+			cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
+			cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 20), 2)
+		# wyświetlanie klatki
+		cv2.imshow("Frame", frame)
+		key = cv2.waitKey(1) & 0xFF
+
+		if key == ord("q"):
+			break
+		elif any(areas):
+			for name in areas:
+				box = areas[name]
+				# utworzenie nowego trackera dla nowego bb i dodanie go do multi-trackera
+				tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
+				trackers.add(tracker, frame, box)
+			areas.clear()
+
+
+	if (args["video"] == None):
+		print(bg.da_magenta, "Koniec testu na obrazie z kamerki śledzonego za pomocą algorytmu ", bg.rs,
+			  fg(255, 150, 50), args["tracker"], fg.rs)
+	else:
+		print(bg.da_magenta, "Koniec testu na filmiku: ", bg.rs, fg(255, 150, 50), args["video"], fg.rs,
+			  bg.da_magenta,
+			  "śledzonego za pomocą algorytmu", bg.rs, fg(255, 150, 50), args["tracker"], fg.rs)
+
+	if success:
+		print(bg.da_cyan, "Średnia wartość klatek przetworzonych na sekundę (fps) wynosiła: ", bg.rs, fg.li_yellow,
+			  av_fps, fg.rs)
+	else:
+		print(bg.da_red, "Śledzenie nie powiodło się!", bg.rs)
+
+
+def look_ovr_frames_w_selection(vs, fps, args, OPENCV_OBJECT_TRACKERS, trackers):
+	# pętla po klatkach pliku wideo
+	av_fps = 0
+	while True:
+		frame = vs.read()
+		frame = frame[1] if args.get("video", False) else frame
+		# sprawdzenie czy nie doszliśmy do końca pliku
+		if frame is None:
+			break
+		# zmiana rozmiaru ramki
+		frame = imutils.resize(frame, width=500)
+		(H, W) = frame.shape[:2]
+		# zebranie informacji o bb dla każdego śledzonego obiektu (jeżeli istnieją)
+		(success, boxes) = trackers.update(frame)
+		# pętla po bounding boxach i wyświetlanie ich na klatce wideo
+		for box in boxes:
+			(x, y, w, h) = [int(v) for v in box]
+			cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+		# update licznika fps
+		fps.update()
+		fps.stop()
+		av_fps = avg_fps(av_fps, fps.fps())
 		# informacje wyświetlane na ekranie
 		info = [
 		  ("Algorytm", args["tracker"]),
@@ -113,6 +180,20 @@ def look_ovr_frames_w_selection(vs, args, OPENCV_OBJECT_TRACKERS, trackers):
 		elif key == ord("q"):
 			break
 
+	if (args["video"] == None):
+		print(bg.da_magenta, "Koniec testu na obrazie z kamerki śledzonego za pomocą algorytmu ", bg.rs,
+			  fg(255, 150, 50), args["tracker"], fg.rs)
+	else:
+		print(bg.da_magenta, "Koniec testu na filmiku: ", bg.rs, fg(255, 150, 50), args["video"], fg.rs,
+			  bg.da_magenta,
+			  "śledzonego za pomocą algorytmu", bg.rs, fg(255, 150, 50), args["tracker"], fg.rs)
+
+	if success:
+		print(bg.da_cyan, "Średnia wartość klatek przetworzonych na sekundę (fps) wynosiła: ", bg.rs, fg.li_yellow,
+			  av_fps, fg.rs)
+	else:
+		print(bg.da_red, "Śledzenie nie powiodło się!", bg.rs)
+
 def release_pointer(vs, args):
     # przy wykorzystaniu kamerki, uwolnienie wskaźnika
     if not args.get("video", False):
@@ -123,11 +204,20 @@ def release_pointer(vs, args):
     cv2.destroyAllWindows()
 
 
+
 if __name__ == "__main__":
+
+	areas = {
+		# pieski.mp4
+		"piesek1": (41, 361, 136, 170),
+		"piesek2": (201, 362, 165, 154),
+		"studzienka": (421, 368, 79, 63)}
+
 	args = arg_parser()
-	opencv_trckers, trackers = choose_tracker(args)
-	fps = FPS().start()
+	opencv_trckers, trackers, fps = choose_tracker(args)
+	# fps = FPS().start()
 	vs = choose_video(args)
-	look_ovr_frames_w_selection(vs, args, opencv_trckers, trackers)
+	look_ovr_frames_w_selection(vs, fps, args, opencv_trckers, trackers)
+	# look_ovr_frames(vs, fps, args, opencv_trckers, trackers, areas)
 	release_pointer(vs, args)
-	print("bo")
+

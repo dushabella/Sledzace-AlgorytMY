@@ -1,5 +1,6 @@
 from data_downloader import download_file_from_google_drive as download
 import SOT_openCV
+import MOT_openCV
 import os
 from typing import List, Dict
 
@@ -7,7 +8,7 @@ def create_dir(dir: str):
     if not os.path.exists(dir):
         os.makedirs(dir)
 
-def run_sot_on_video(trackers: List, video: str, areas: Dict):
+def run_sot_on_video(trackers: List, video: str, areas: Dict) -> None:
 # run tracking for the particular video
     args = dict()
     args["video"] = video
@@ -23,6 +24,19 @@ def run_sot_on_video(trackers: List, video: str, areas: Dict):
             SOT_openCV.look_ovr_frames(vs, args, initBB, tracker, boundingbox)
             SOT_openCV.release_pointer(vs, args)
 
+def run_mot_on_video(trackers: List, video: str, areas: Dict) -> None:
+# run tracking for the particular video
+    args = dict()
+    args["video"] = video
+    for tracker in trackers:
+        args["tracker"] = tracker
+        print(tracker)
+
+        opencv_trckers, trackers, fps = MOT_openCV.choose_tracker(args)
+        vs = MOT_openCV.choose_video(args)
+        MOT_openCV.look_ovr_frames(vs, fps, args, opencv_trckers, trackers, areas)
+        MOT_openCV.release_pointer(vs, args)
+
 
 videos = {
     "1ObQ1515WzvgusfJOuh7RVs7Bxxesy8kz": "./data/race.mp4",
@@ -34,6 +48,7 @@ videos = {
     "1JViJlwpx4IKukwlcuuEMUjpocBg729GW": "./data/pieski.mp4"
 }
 
+""" Areas for SOT testing"""
 areas1 = {
     # pieski.mp4
     "pieski_mordka_S": (236, 386, 39, 44),
@@ -76,6 +91,13 @@ areas7 = {
     "race_zawodnik_M": (175, 122, 48, 98),
     "race_zawodnik_L": (168, 119, 73, 115)}
 
+""" Areas for MOT testing"""
+areas_MOT_1 = {
+    # pieski.mp4
+    "piesek1": (41, 361, 136, 170),
+    "piesek2": (201, 362, 165, 154),
+    "studzienka": (421, 368, 79, 63)}
+
 trackers = [
     "csrt",
     # "kcf",
@@ -85,7 +107,6 @@ trackers = [
     # "medianflow",
     "mosse"]
 
-# args = {"video": "data/pieski.mp4", "tracker": "mil"}
 
 if __name__ == "__main__":
 
@@ -95,15 +116,22 @@ if __name__ == "__main__":
     for file_id, filename in videos.items():
         download(file_id, filename)
 
-    run_sot_on_video(trackers, 'data/pieski.mp4', areas1)
+    """
+        TUTAJ ODPALANIE SOT (odkomentować potrzebne)
+        Uwaga, można POSIEDZIEĆ I DOPASOWAĆ LEPIEJ TE OBSZARY ŚLEDZENIA 
+        robi się to odpalając plik SOT_openCV.py z konsoli i tam po zaznaczeniu obszaru 
+        na samym początku filmiku za pomocą "s" i zatwierdzenia go enterem/spacją wypisze się 
+        na konsoli initBB w postaci (x, y, h, w) i oczywiście przeklejając do areas
+    """
+    # run_sot_on_video(trackers, 'data/pieski.mp4', areas1)
+    # run_sot_on_video(trackers, 'data/american_pharoah.mp4', areas2)
+    # run_sot_on_video(trackers, 'data/dashcam_boston.mp4', areas3)
+    # run_sot_on_video(trackers, 'data/drone.mp4', areas4)
+    # run_sot_on_video(trackers, 'data/nascar_01.mp4', areas5)
+    # run_sot_on_video(trackers, 'data/nascar_02.mp4', areas6)
+    run_sot_on_video(trackers, 'data/race.mp4', areas7)
 
-    # run tracking for the particular video
-    # for name, boundingbox in areas.items():
-    #     args = {"video": "data/pieski.mp4", "tracker": "mil"}
-    #     tracker = SOT_openCV.choose_tracker(args)
-    #     initBB = None
-    #     vs = SOT_openCV.choose_video(args)
-    #     fps = None
-    #
-    #     SOT_openCV.look_ovr_frames(vs, args, initBB, tracker, boundingbox)
-    #     SOT_openCV.release_pointer(vs, args)
+    """
+        TUTAJ ODPALANIE MOT (trzeba zdefiniować obszary do testowania dla innych widełów)
+    """
+    run_mot_on_video(trackers, 'data/pieski.mp4', areas_MOT_1)

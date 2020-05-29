@@ -142,8 +142,12 @@ def look_ovr_frames(vs, args, initBB, tracker, area):
     else:
         print(bg.da_magenta, "Koniec testu na filmiku: ", bg.rs, fg(255, 150, 50), args["video"], fg.rs, bg.da_magenta,
               "śledzonego za pomocą algorytmu", bg.rs, fg(255, 150, 50), args["tracker"], fg.rs)
-    print(bg.da_cyan, "Średnia wartość klatek przetworzonych na sekundę (fps) wynosiła: ", bg.rs, fg.li_yellow,
-          av_fps, fg.rs)
+
+    if success:
+        print(bg.da_cyan, "Średnia wartość klatek przetworzonych na sekundę (fps) wynosiła: ", bg.rs, fg.li_yellow,
+              av_fps, fg.rs)
+    else:
+        print(bg.da_red, "Śledzenie nie powiodło się!", bg.rs)
 
 
 def look_ovr_frames_w_selection(vs, args, initBB, tracker):
@@ -151,7 +155,7 @@ def look_ovr_frames_w_selection(vs, args, initBB, tracker):
     # pętla po klatkach pliku wideo
     while True:
       frame = vs.read()
-      frame = frame[1] if args.get("qqvideo", False) else frame
+      frame = frame[1] if args.get("video", False) else frame
       # sprawdzenie czy nie doszliśmy do końca pliku
       if frame is None:
         break
@@ -193,7 +197,7 @@ def look_ovr_frames_w_selection(vs, args, initBB, tracker):
         # wybranie obiektu do śledzenia, wybór zatwierdzany SPACJĄ lub ENTEREM
         initBB = cv2.selectROI("Frame", frame, fromCenter=False,
           showCrosshair=True)
-        # print("initBB: ", initBB)
+        print("initBB: ", initBB)
         # rozpoczęcie śledzenia z wybranym bb, rozpoczęcie obliczeń FPS
         tracker.init(frame, initBB)
         fps = FPS().start()
@@ -207,7 +211,12 @@ def look_ovr_frames_w_selection(vs, args, initBB, tracker):
               fg(255, 150, 50), args["tracker"], fg.rs)
     else:
         print("Koniec testu na filmiku ", args["video"], "śledzonego za pomocą algorytmu", args["tracker"])
-    print("Średnia wartość klatek przetworzonych na sekundę (fps) wynosiła: ", av_fps)
+
+    if success:
+        print(bg.da_cyan, "Średnia wartość klatek przetworzonych na sekundę (fps) wynosiła: ", bg.rs, fg.li_yellow,
+              av_fps, fg.rs)
+    else:
+        print(bg.da_red, "Śledzenie nie powiodło się!", bg.rs)
 
 
 def release_pointer(vs, args):
