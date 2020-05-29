@@ -16,6 +16,8 @@ import argparse
 import imutils
 import time
 import cv2
+from sty import fg, bg, ef, rs
+
 
 # przekazywanie argumentów
 def arg_parser():
@@ -77,7 +79,16 @@ def define_object(initBB, frame, tracker):
     fps = FPS().start()
     return(fps)
 
-def look_ovr_frames(vs, args, initBB, tracker, areas):
+def avg_fps(avg: float, fps: float) -> float:
+# counts avg value of fps
+    if avg == 0:
+        return fps
+    else:
+        return (avg + fps)/2
+
+def look_ovr_frames(vs, args, initBB, tracker, area):
+    # inicjalizacja średniej wartości przetworzonych klatek na sekundę (fps)
+    av_fps = 0
     # pętla po klatkach pliku wideo
     while True:
       frame = vs.read()
@@ -101,6 +112,7 @@ def look_ovr_frames(vs, args, initBB, tracker, areas):
         # update licznika fps
         fps.update()
         fps.stop()
+        av_fps = avg_fps(av_fps, fps.fps())
         # informacje wyświetlane na ekranie
         info = [
           ("Tracker", args["tracker"]),
@@ -116,22 +128,30 @@ def look_ovr_frames(vs, args, initBB, tracker, areas):
     # wyświetlanie klatki
       cv2.imshow("Frame", frame)
       key = cv2.waitKey(1) & 0xFF
-
       # jeżeli naciśnięty został przycisk 'q' program wyjdzie z pętli
       if key == ord("q"):
         break
-
       # pobierz obszar do śledzenia ze słownika areas
       else:
-        initBB = areas
+        initBB = area
         fps = define_object(initBB, frame, tracker)
+
+    if(args["video"] == None):
+        print(bg.da_magenta, "Koniec testu na obrazie z kamerki śledzonego za pomocą algorytmu ", bg.rs,
+              fg(255, 150, 50), args["tracker"], fg.rs)
+    else:
+        print(bg.da_magenta, "Koniec testu na filmiku: ", bg.rs, fg(255, 150, 50), args["video"], fg.rs, bg.da_magenta,
+              "śledzonego za pomocą algorytmu", bg.rs, fg(255, 150, 50), args["tracker"], fg.rs)
+    print(bg.da_cyan, "Średnia wartość klatek przetworzonych na sekundę (fps) wynosiła: ", bg.rs, fg.li_yellow,
+          av_fps, fg.rs)
 
 
 def look_ovr_frames_w_selection(vs, args, initBB, tracker):
+    av_fps = 0
     # pętla po klatkach pliku wideo
     while True:
       frame = vs.read()
-      frame = frame[1] if args.get("video", False) else frame
+      frame = frame[1] if args.get("qqvideo", False) else frame
       # sprawdzenie czy nie doszliśmy do końca pliku
       if frame is None:
         break
@@ -151,6 +171,7 @@ def look_ovr_frames_w_selection(vs, args, initBB, tracker):
         # update licznika fps
         fps.update()
         fps.stop()
+        av_fps = avg_fps(av_fps, fps.fps())
         # informacje wyświetlane na ekranie
         info = [
           ("Tracker", args["tracker"]),
@@ -172,7 +193,7 @@ def look_ovr_frames_w_selection(vs, args, initBB, tracker):
         # wybranie obiektu do śledzenia, wybór zatwierdzany SPACJĄ lub ENTEREM
         initBB = cv2.selectROI("Frame", frame, fromCenter=False,
           showCrosshair=True)
-        print("initBB: ", initBB)
+        # print("initBB: ", initBB)
         # rozpoczęcie śledzenia z wybranym bb, rozpoczęcie obliczeń FPS
         tracker.init(frame, initBB)
         fps = FPS().start()
@@ -180,6 +201,13 @@ def look_ovr_frames_w_selection(vs, args, initBB, tracker):
       # jeżeli naciśnięty został przycisk 'q' program wyjdzie z pętli
       elif key == ord("q"):
         break
+
+    if(args["video"] == None):
+        print(bg.da_magenta, "Koniec testu na obrazie z kamerki śledzonego za pomocą algorytmu ", bg.rs,
+              fg(255, 150, 50), args["tracker"], fg.rs)
+    else:
+        print("Koniec testu na filmiku ", args["video"], "śledzonego za pomocą algorytmu", args["tracker"])
+    print("Średnia wartość klatek przetworzonych na sekundę (fps) wynosiła: ", av_fps)
 
 
 def release_pointer(vs, args):
@@ -195,7 +223,7 @@ def release_pointer(vs, args):
     Zbiór współrzędnych initBB dla projektu zespołowego
     Format współrzędnych (x y w h)
 """
-# pieski2.mp4
+# pieski.mp4
 areas = {"pieski_mordka_S": (236, 386, 39, 44),
          "pieski_ogon_M": (107, 359, 64, 59),
          "pieski_caly_L": (179, 346, 201, 190)}
@@ -241,4 +269,3 @@ if __name__ == "__main__":
     # look_ovr_frames(vs, args, initBB, tracker, areas["pieski_ogon_M"])
     look_ovr_frames_w_selection(vs, args, initBB, tracker)
     release_pointer(vs, args)
-    print("lolells")
