@@ -155,6 +155,7 @@ def look_ovr_frames_w_selection(vs, args, initBB, tracker):
     # pętla po klatkach pliku wideo
     while True:
       frame = vs.read()
+      # time.sleep(1.0) # opoznienie do znajdywania klatki
       frame = frame[1] if args.get("video", False) else frame
       # sprawdzenie czy nie doszliśmy do końca pliku
       if frame is None:
@@ -235,7 +236,8 @@ def release_pointer(vs, args):
 # pieski.mp4
 areas = {"pieski_mordka_S": (236, 386, 39, 44),
          "pieski_ogon_M": (107, 359, 64, 59),
-         "pieski_caly_L": (179, 346, 201, 190)}
+         "pieski_caly_L": (179, 346, 201, 190),
+         "test": (207, 95, 42, 86)}
 
 # # american_pharoah.mp4
 # areas = {"american_jezdziec_S": (433, 121, 22, 21),
@@ -263,9 +265,9 @@ areas = {"pieski_mordka_S": (236, 386, 39, 44),
 #          "nascar2_zielony_L": (187, 146, 97, 93)}
 #
 # # race.mp4
-# areas = {"race_zawodnik_S": (187, 124, 30, 46),
-#          "race_zawodnik_M": (175, 122, 48, 98),
-#          "race_zawodnik_L": (168, 119, 73, 115)}
+# areas = {"race_usain_bolt": (251, 96, 49, 81),
+#          "race_tyson_gay": (207, 95, 42, 86),
+#          "race_asafa_powell": (152, 104, 59, 88)}
 
 if __name__ == "__main__":
     args = arg_parser()
@@ -275,6 +277,6 @@ if __name__ == "__main__":
     vs = choose_video(args)
     fps = None
 
-    # look_ovr_frames(vs, args, initBB, tracker, areas["pieski_ogon_M"])
-    look_ovr_frames_w_selection(vs, args, initBB, tracker)
+    look_ovr_frames(vs, args, initBB, tracker, areas["test"])
+    # look_ovr_frames_w_selection(vs, args, initBB, tracker)
     release_pointer(vs, args)

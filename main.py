@@ -135,3 +135,4 @@ if __name__ == "__main__":
         TUTAJ ODPALANIE MOT (trzeba zdefiniować obszary do testowania dla innych widełów)
     """
     run_mot_on_video(trackers, 'data/pieski.mp4', areas_MOT_1)
+    # run_mot_on_video(trackers, 'data/race.mp4', areas_MOT_2)
