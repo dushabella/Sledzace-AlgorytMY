@@ -1,137 +1,268 @@
-from data_downloader import download_file_from_google_drive as download
-import SOT_openCV
-import MOT_openCV
-import os
-from typing import List, Dict
+"""
+Author: Apoorva Vinod Gorur
+Email: apoorva.v94@gmail.com
+"""
 
-def create_dir(dir: str):
-    if not os.path.exists(dir):
-        os.makedirs(dir)
-
-def run_sot_on_video(trackers: List, video: str, areas: Dict) -> None:
-# run tracking for the particular video
-    args = dict()
-    args["video"] = video
-    for tracker in trackers:
-        args["tracker"] = tracker
-        print(tracker)
-        for name, boundingbox in areas.items():
-            tracker = SOT_openCV.choose_tracker(args)
-            initBB = None
-            vs = SOT_openCV.choose_video(args)
-            fps = None
-
-            SOT_openCV.look_ovr_frames(vs, args, initBB, tracker, boundingbox)
-            SOT_openCV.release_pointer(vs, args)
-
-def run_mot_on_video(trackers: List, video: str, areas: Dict) -> None:
-# run tracking for the particular video
-    args = dict()
-    args["video"] = video
-    for tracker in trackers:
-        args["tracker"] = tracker
-        print(tracker)
-
-        opencv_trckers, trackers, fps = MOT_openCV.choose_tracker(args)
-        vs = MOT_openCV.choose_video(args)
-        MOT_openCV.look_ovr_frames(vs, fps, args, opencv_trckers, trackers, areas)
-        MOT_openCV.release_pointer(vs, args)
+import cv2 as cv
+import argparse
+import sys
+import numpy as np
+import time
+from copy import deepcopy
+import imutils
+from object_detection import object_detector
 
 
-videos = {
-    "1ObQ1515WzvgusfJOuh7RVs7Bxxesy8kz": "./data/race.mp4",
-    "114QEzVWm9FUiy-TAeW0rpAoxvATWuS8W": "./data/nascar_02.mp4",
-    "1cCJncXIvddvEzr_BWNPq2dIuc2-IzY6z": "./data/nascar_01.mp4",
-    "1icwmORKqh6Lv5GMUN_mzn-IyNg1H4GEM": "./data/drone.mp4",
-    "1-9zNexo0RZA3SPQ0q6334QwCWEWsiLO-": "./data/dashcam_boston.mp4",
-    "1jKDtfacJ9JnPT18Qvio14jYWa6CV9e7j": "./data/american_pharoah.mp4",
-    "1JViJlwpx4IKukwlcuuEMUjpocBg729GW": "./data/pieski.mp4"
-}
+def drawPred(frame, objects_detected):
 
-""" Areas for SOT testing"""
-areas1 = {
-    # pieski.mp4
-    "pieski_mordka_S": (236, 386, 39, 44),
-    "pieski_ogon_M": (107, 359, 64, 59),
-    "pieski_caly_L": (179, 346, 201, 190)}
+    objects_list = list(objects_detected.keys())
 
-areas2 = {
-    # american_pharoah.mp4
-    "american_jezdziec_S": (433, 121, 22, 21),
-    "american_kon_M": (418, 120, 74, 44),
-    "american_zbiorowe_L": (120, 115, 160, 51)}
+    for object_, info in objects_detected.items():
+        box = info[0]
+        confidence = info[1]
+        label = '%s: %.2f' % (object_, confidence)
+        p1 = (int(box[0]), int(box[1]))
+        p2 = (int(box[0] + box[2]), int(box[1] + box[3]))
+        cv.rectangle(frame, p1, p2, (0, 255, 0))
+        left = int(box[0])
+        top = int(box[1])
+        labelSize, baseLine = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        top = max(top, labelSize[1])
+        cv.rectangle(frame, (left, top - labelSize[1]), (left + labelSize[0], top + baseLine), (255, 255, 255), cv.FILLED)
+        cv.putText(frame, label, (left, top), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))  
+       
 
-areas3 = {
-    # dashcam_boston.mp4
-    "dashcam_swiatla_S": (430, 112, 24, 24),
-    "dashcam_suv_M": (403, 181, 38, 34),
-    "dashcam_honda_L": (317, 177, 64, 60)}
+def postprocess(frame, out, threshold, classes, framework):
 
-areas4 = {
-    # drone.mp4
-    "drone_bialy_S": (329, 49, 21, 20),
-    "drone_szary_M": (224, 142, 75, 64),
-    "drone_szary_L": (161, 132, 206, 87)}
+    frameHeight = frame.shape[0]
+    frameWidth = frame.shape[1]
+    objects_detected = dict()
 
-areas5 = {
-    # nascar_01.mp4
-    "nascar1_zielony_S": (250, 123, 37, 23),
-    "nascar1_zielony_M": (240, 115, 57, 41),
-    "nascar_zielony_L": (220, 97, 102, 73)}
+    if framework == 'Caffe':
+        # Network produces output blob with a shape 1x1xNx7 where N is a number of
+        # detections and an every detection is a vector of values
+        # [batchId, classId, confidence, left, top, right, bottom]
+        for detection in out[0, 0]:
+            confidence = detection[2]
+            if confidence > threshold:
+                left = int(detection[3] * frameWidth)
+                top = int(detection[4] * frameHeight)
+                right = int(detection[5] * frameWidth)
+                bottom = int(detection[6] * frameHeight)
+                #classId = int(detection[1]) - 1  # Skip background label
+                
+                classId = int(detection[1])
+                i = 0
+                label = classes[classId]
+                label_with_num = str(label) + '_' + str(i)
+                while(True):
+                    if label_with_num not in objects_detected.keys():
+                        break
+                    label_with_num = str(label) + '_' + str(i)
+                    i = i+1
+                objects_detected[label_with_num] = [(int(left),int(top),int(right - left), int(bottom-top)),confidence] 
+                #print(label_with_num + ' at co-ordinates '+ str(objects_detected[label_with_num]))
 
-areas6 = {
-    # nascar_02.mp4
-    "nascar2_zielony_S": (208, 169, 40, 45),
-    "nascar2_zielony_M": (200, 166, 62, 60),
-    "nascar2_zielony_L": (187, 146, 97, 93)}
+    else:
+        # Network produces output blob with a shape NxC where N is a number of
+        # detected objects and C is a number of classes + 4 where the first 4
+        # numbers are [center_x, center_y, width, height]
+        for detection in out:
+            confidences = detection[5:]
+            classId = np.argmax(confidences)
+            confidence = confidences[classId]
+            if confidence > threshold:
+                center_x = int(detection[0] * frameWidth)
+                center_y = int(detection[1] * frameHeight)
+                width = int(detection[2] * frameWidth)
+                height = int(detection[3] * frameHeight)
+                left = center_x - (width / 2)
+                top = center_y - (height / 2)
+                
+                i = 0
+                label = classes[classId]
+                label_with_num = str(label) + '_' + str(i)
+                while(True):
+                    if label_with_num not in objects_detected.keys():
+                        break
+                    label_with_num = str(label) + '_' + str(i)
+                    i = i+1
+                objects_detected[label_with_num] = [(int(left),int(top),int(width),int(height)),confidence]
+                #print(label_with_num + ' at co-ordinates '+ str(objects_detected[label_with_num]))
 
-areas7 = {
-    # race.mp4
-    "race_zawodnik_S": (187, 124, 30, 46),
-    "race_zawodnik_M": (175, 122, 48, 98),
-    "race_zawodnik_L": (168, 119, 73, 115)}
+    return objects_detected
 
-""" Areas for MOT testing"""
-areas_MOT_1 = {
-    # pieski.mp4
-    "piesek1": (41, 361, 136, 170),
-    "piesek2": (201, 362, 165, 154),
-    "studzienka": (421, 368, 79, 63)}
+def intermediate_detections(stream, predictor, threshold, classes):
+    
+    
+    _,frame = stream.read()
+    predictions = predictor.predict(frame)
+    objects_detected = postprocess(frame, predictions, threshold, classes, predictor.framework)
+        
+    objects_list = list(objects_detected.keys())
+    print('Tracking the following objects', objects_list)
 
-trackers = [
-    "csrt",
-    # "kcf",
-    # "boosting",
-    # "mil",
-    # "tld",
-    # "medianflow",
-    "mosse"]
+    trackers_dict = dict()    
+    #multi_tracker = cv.MultiTracker_create()
 
+    if len(objects_list) > 0:
+        
+        trackers_dict = {key : cv.TrackerKCF_create() for key in objects_list}
+        for item in objects_list:
+            trackers_dict[item].init(frame, objects_detected[item][0])
+            
+    return stream, objects_detected, objects_list, trackers_dict
 
-if __name__ == "__main__":
+def process(args):
 
-    create_dir("data")
-
-    # update the video files
-    for file_id, filename in videos.items():
-        download(file_id, filename)
-
-    """
-        TUTAJ ODPALANIE SOT (odkomentować potrzebne)
-        Uwaga, można POSIEDZIEĆ I DOPASOWAĆ LEPIEJ TE OBSZARY ŚLEDZENIA 
-        robi się to odpalając plik SOT_openCV.py z konsoli i tam po zaznaczeniu obszaru 
-        na samym początku filmiku za pomocą "s" i zatwierdzenia go enterem/spacją wypisze się 
-        na konsoli initBB w postaci (x, y, h, w) i oczywiście przeklejając do areas
-    """
-    # run_sot_on_video(trackers, 'data/pieski.mp4', areas1)
-    # run_sot_on_video(trackers, 'data/american_pharoah.mp4', areas2)
-    # run_sot_on_video(trackers, 'data/dashcam_boston.mp4', areas3)
-    # run_sot_on_video(trackers, 'data/drone.mp4', areas4)
-    # run_sot_on_video(trackers, 'data/nascar_01.mp4', areas5)
-    # run_sot_on_video(trackers, 'data/nascar_02.mp4', areas6)
-    run_sot_on_video(trackers, 'data/race.mp4', areas7)
+    objects_detected = dict()
 
     """
-        TUTAJ ODPALANIE MOT (trzeba zdefiniować obszary do testowania dla innych widełów)
+    #tracker_types = ['BOOSTING', 'MIL','KCF', 'TLD', 'MEDIANFLOW', 'GOTURN']
+    #tracker_type = tracker_types[2]
+    #tracker = None
+
+    
+    if tracker_type == 'BOOSTING':
+        tracker = cv.TrackerBoosting_create()
+    if tracker_type == 'MIL':
+        tracker = cv.TrackerMIL_create()
+    if tracker_type == 'KCF':
+        tracker = cv.TrackerKCF_create()
+    if tracker_type == 'TLD':
+        tracker = cv.TrackerTLD_create()
+    if tracker_type == 'MEDIANFLOW':
+        tracker = cv.TrackerMedianFlow_create()
+    if tracker_type == 'GOTURN':
+        tracker = cv.TrackerGOTURN_create()
     """
-    run_mot_on_video(trackers, 'data/pieski.mp4', areas_MOT_1)
+
+    predictor = object_detector(args.model, args.config)
+    stream = cv.VideoCapture(args.input if args.input else 0)
+    window_name = "Tracking in progress"
+    cv.namedWindow(window_name, cv.WINDOW_NORMAL)
+    cv.setWindowProperty(window_name, cv.WND_PROP_AUTOSIZE, cv.WINDOW_AUTOSIZE)        
+    cv.moveWindow(window_name,10,10)
+    
+
+    if args.output:
+        _, test_frame = stream.read()
+        height = test_frame.shape[0]
+        width = test_frame.shape[1]
+        fourcc = cv.VideoWriter_fourcc(*'XVID')
+        #out = cv.VideoWriter(args.output,fourcc, 20.0, (640,480))
+        out = cv.VideoWriter(args.output,fourcc, 20.0, (width,height))
+        failTolerance = 0
+
+    if args.classes:
+        with open(args.classes, 'rt') as f:
+            classes = f.read().rstrip('\n').split('\n')
+    else:
+        classes = list(np.arange(0,100))
+
+    stream, objects_detected, objects_list, trackers_dict = intermediate_detections(stream, predictor, args.thr, classes)    
+
+    while stream.isOpened():
+    
+        grabbed, frame = stream.read()
+
+        if not grabbed:
+            break
+
+        timer = cv.getTickCount()
+
+        """
+        #Did not use OpenCV's multitracker because of the restrivtive nature of its Python counterpart.
+        #If one tracker in the multitracker fails, there's no way to find out which tracker failed.
+        #There's no easy way to delete individual trackers in the multitracker object.
+        #Even when multitracker fails,  bboxes will have old values, but 'ok' will be false
+        
+        #if len(objects_list) > 0:
+            #ok, bboxes = multi_tracker.update(frame)
+        #bboxes = multi_tracker.getObjects()
+        #ok = multi_tracker.empty()
+        """
+        
+        print('Tracking - ',objects_list)
+
+        if len(objects_detected) > 0:
+            del_items = []
+            for obj,tracker in trackers_dict.items():
+                ok, bbox = tracker.update(frame)
+                if ok:
+                    objects_detected[obj][0] = bbox
+                else:
+                    print('Failed to track ', obj)
+                    del_items.append(obj) 
+        
+            for item in del_items:            
+                trackers_dict.pop(item)
+                objects_detected.pop(item)
+                
+        fps = cv.getTickFrequency() / (cv.getTickCount() - timer)
+
+        if len(objects_detected) > 0:
+            drawPred(frame, objects_detected)
+            # Display FPS on frame
+            cv.putText(frame, "FPS : " + str(int(fps)), (100,50), cv.FONT_HERSHEY_SIMPLEX, 0.75, (50,170,50), 2)
+
+        else:
+            cv.putText(frame, 'Tracking Failure. Trying to detect more objects', (50,80), cv.FONT_HERSHEY_SIMPLEX, 0.75,(0,0,255),2)
+            stream, objects_detected, objects_list, trackers_dict = intermediate_detections(stream, predictor, args.thr, classes)   
+            
+        
+        # Display result
+        #If resolution is too big, resize the video
+        if frame.shape[1] > 1240:
+            cv.imshow(window_name, cv.resize(frame, (1240, 960)))
+        else:
+            cv.imshow(window_name, frame)
+        
+        #Write to output file
+        if args.output:
+            out.write(frame)
+        k = cv.waitKey(1) & 0xff
+
+        #Force detect new objects if 'q' is pressed
+        if k == ord('q'):
+            print('Refreshing. Detecting New objects')
+            cv.putText(frame, 'Refreshing. Detecting New objects', (100,80), cv.FONT_HERSHEY_SIMPLEX, 0.75,(0,0,255),2)
+            stream, objects_detected, objects_list, trackers_dict = intermediate_detections(stream, predictor, args.thr, classes)  
+            
+        # Exit if ESC pressed    
+        if k == 27 : break 
+
+    stream.release()
+    if args.output:
+        out.release()
+    cv.destroyAllWindows()
+
+
+def main():
+    
+    parser = argparse.ArgumentParser(description='Object Detection and Tracking on Video Streams')
+    
+    parser.add_argument('--input', help='Path to input image or video file. Skip this argument to capture frames from a camera.')
+
+    parser.add_argument('--output', help='Path to save output as video file. If nothing is given, the output will not be saved.')
+
+    parser.add_argument('--model', required=True,
+                        help='Path to a binary file of model contains trained weights. '
+                             'It could be a file with extensions .caffemodel (Caffe), '
+                             '.weights (Darknet)')
+    
+    parser.add_argument('--config',
+                        help='Path to a text file of model contains network configuration. '
+                             'It could be a file with extensions .prototxt (Caffe), .cfg (Darknet)')
+    
+    parser.add_argument('--classes', help='Optional path to a text file with names of classes to label detected objects.')
+    
+    parser.add_argument('--thr', type=float, default=0.35, help='Confidence threshold for detection')
+    
+    args = parser.parse_args()
+
+
+    process(args)
+
+if __name__ == '__main__':
+    main()
