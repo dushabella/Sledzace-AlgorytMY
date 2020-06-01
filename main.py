@@ -3,6 +3,7 @@ import SOT_openCV
 import MOT_openCV
 import os
 from typing import List, Dict
+import copy
 
 def create_dir(dir: str):
     if not os.path.exists(dir):
@@ -27,7 +28,9 @@ def run_sot_on_video(trackers: List, video: str, areas: Dict) -> None:
 def run_mot_on_video(trackers: List, video: str, areas: Dict) -> None:
 # run tracking for the particular video
     args = dict()
+    areas_temp = dict()
     args["video"] = video
+    areas_temp = copy.deepcopy(areas)
     for tracker in trackers:
         args["tracker"] = tracker
         print(tracker)
@@ -35,6 +38,7 @@ def run_mot_on_video(trackers: List, video: str, areas: Dict) -> None:
         opencv_trckers, trackers, fps = MOT_openCV.choose_tracker(args)
         vs = MOT_openCV.choose_video(args)
         MOT_openCV.look_ovr_frames(vs, fps, args, opencv_trckers, trackers, areas)
+        areas = dict(areas_temp.items())
         MOT_openCV.release_pointer(vs, args)
 
 
@@ -87,9 +91,9 @@ areas6 = {
 
 areas7 = {
     # race.mp4
-    "race_zawodnik_S": (187, 124, 30, 46),
-    "race_zawodnik_M": (175, 122, 48, 98),
-    "race_zawodnik_L": (168, 119, 73, 115)}
+    "race_usain_bolt": (251, 96, 49, 81),
+    "race_tyson_gay": (207, 95, 42, 86),
+    "race_asafa_powell": (152, 104, 59, 88)}
 
 """ Areas for MOT testing"""
 areas_MOT_1 = {
@@ -98,13 +102,18 @@ areas_MOT_1 = {
     "piesek2": (201, 362, 165, 154),
     "studzienka": (421, 368, 79, 63)}
 
+areas_MOT_2 = {
+    # race.mp4
+    "race_usain_bolt": (251, 96, 49, 81),
+    "race_asafa_powell": (152, 104, 59, 88)}
+
 trackers = [
     "csrt",
-    # "kcf",
-    # "boosting",
-    # "mil",
-    # "tld",
-    # "medianflow",
+    "kcf",
+    "boosting",
+    "mil",
+    "tld",
+    "medianflow",
     "mosse"]
 
 
@@ -129,10 +138,10 @@ if __name__ == "__main__":
     # run_sot_on_video(trackers, 'data/drone.mp4', areas4)
     # run_sot_on_video(trackers, 'data/nascar_01.mp4', areas5)
     # run_sot_on_video(trackers, 'data/nascar_02.mp4', areas6)
-    run_sot_on_video(trackers, 'data/race.mp4', areas7)
+    # run_sot_on_video(trackers, 'data/race.mp4', areas7)
 
     """
-        TUTAJ ODPALANIE MOT (trzeba zdefiniować obszary do testowania dla innych widełów)
+        TUTAJ ODPALANIE MOT 
     """
     run_mot_on_video(trackers, 'data/pieski.mp4', areas_MOT_1)
     # run_mot_on_video(trackers, 'data/race.mp4', areas_MOT_2)

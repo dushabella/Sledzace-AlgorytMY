@@ -2,7 +2,7 @@
     Śledzenie pojedycznego obiektu na pliku wideo lub obrazie z kamerki
     Wykorzystywana biblioteka OpenCV i wbudowane 7 algorytmów śledzących
     Sposób użycia:
-    python3.7 cvtrackersot.py --video nazwapliku.mp4 --tracker algorytm
+    python3.7 SOT_openCV.py --video nazwapliku.mp4 --tracker algorytm
         s -- wybierz obszar śledzenia
         q -- zakończ śledzenie i zamknij okno
         c -- anuluj zaznaczenie

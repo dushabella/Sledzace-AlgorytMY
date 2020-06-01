@@ -220,4 +220,3 @@ if __name__ == "__main__":
 	look_ovr_frames_w_selection(vs, fps, args, opencv_trckers, trackers)
 	# look_ovr_frames(vs, fps, args, opencv_trckers, trackers, areas)
 	release_pointer(vs, args)
-
