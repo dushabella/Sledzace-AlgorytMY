@@ -95,6 +95,7 @@ areas7 = {
     "race_tyson_gay": (207, 95, 42, 86),
     "race_asafa_powell": (152, 104, 59, 88)}
 
+
 """ Areas for MOT testing"""
 areas_MOT_1 = {
     # pieski.mp4
@@ -106,6 +107,28 @@ areas_MOT_2 = {
     # race.mp4
     "race_usain_bolt": (251, 96, 49, 81),
     "race_asafa_powell": (152, 104, 59, 88)}
+
+areas_MOT_3 = { # Michał
+    # pieski.mp4
+    "piesek1": (91, 410, 40, 37),
+    "piesek2": (236, 388, 42, 40),
+    "studzienka": (424, 391, 75, 24)}
+
+areas_MOT_4 = { # Michał
+    # drone.mp4
+    "auto1": (187, 111, 60, 53),
+	"auto2": (273, 36, 18, 12)}
+
+areas_MOT_5 = { # Michał
+    # nascar_01.mp4
+    "auto1": (197, 102, 37, 21),
+    "auto2": (309, 135, 38, 17)}
+
+areas_MOT_6 = { # Michał
+    # race.mp4
+    "biegacz1": (206, 103, 41, 75),
+    "biegacz2": (257, 99, 34, 82)}
+
 
 trackers = [
     "csrt",
@@ -143,5 +166,9 @@ if __name__ == "__main__":
     """
         TUTAJ ODPALANIE MOT 
     """
-    run_mot_on_video(trackers, 'data/pieski.mp4', areas_MOT_1)
+    # run_mot_on_video(trackers, 'data/pieski.mp4', areas_MOT_1)
     # run_mot_on_video(trackers, 'data/race.mp4', areas_MOT_2)
+    # run_mot_on_video(trackers, 'data/pieski.mp4', areas_MOT_3)
+    # run_mot_on_video(trackers, 'data/drone.mp4', areas_MOT_4)
+    # run_mot_on_video(trackers, 'data/nascar_01.mp4', areas_MOT_5)
+    run_mot_on_video(trackers, 'data/race.mp4', areas_MOT_6)
