@@ -1,3 +1,14 @@
+"""
+    przykładowe testy:
+            SOT
+        https://youtu.be/vfmsjQwikWk
+        https://youtu.be/tLGK8UM9Otc
+
+            MOT
+        https://youtu.be/14sLhGD8-7s
+        https://youtu.be/h_IcJ0NZ0ak
+"""
+
 from data_downloader import download_file_from_google_drive as download
 import SOT_openCV
 import MOT_openCV
@@ -101,7 +112,8 @@ areas_MOT_1 = {
     # pieski.mp4
     "piesek1": (41, 361, 136, 170),
     "piesek2": (201, 362, 165, 154),
-    "studzienka": (421, 368, 79, 63)}
+    "studzienka": (421, 368, 79, 63)
+    }
 
 areas_MOT_2 = {
     # race.mp4
@@ -112,7 +124,8 @@ areas_MOT_3 = { # Michał
     # pieski.mp4
     "piesek1": (91, 410, 40, 37),
     "piesek2": (236, 388, 42, 40),
-    "studzienka": (424, 391, 75, 24)}
+    "studzienka": (424, 391, 75, 24)
+    }
 
 areas_MOT_4 = { # Michał
     # drone.mp4
@@ -127,17 +140,19 @@ areas_MOT_5 = { # Michał
 areas_MOT_6 = { # Michał
     # race.mp4
     "biegacz1": (206, 103, 41, 75),
-    "biegacz2": (257, 99, 34, 82)}
+    "biegacz2": (257, 99, 34, 82)
+    }
 
 
 trackers = [
-    "csrt",
-    "kcf",
-    "boosting",
+    # "csrt",
+    # "kcf",
+    # "boosting",
     "mil",
-    "tld",
-    "medianflow",
-    "mosse"]
+    # "tld",
+    # "medianflow",
+    # "mosse"
+    ]
 
 
 if __name__ == "__main__":
@@ -163,6 +178,12 @@ if __name__ == "__main__":
     # run_sot_on_video(trackers, 'data/nascar_02.mp4', areas6)
     # run_sot_on_video(trackers, 'data/race.mp4', areas7)
 
+    # TEŚCIK DO MOJEGO MILA"
+    # run_sot_on_video(trackers, 'data/pieski.mp4', areas_MOT_3)
+    # run_sot_on_video(trackers, 'data/race.mp4', areas_MOT_6)
+    # run_sot_on_video(trackers, 'data/drone.mp4', areas_MOT_4)
+    run_sot_on_video(trackers, 'data/nascar_01.mp4', areas_MOT_5)
+
     """
         TUTAJ ODPALANIE MOT 
     """
@@ -171,4 +192,4 @@ if __name__ == "__main__":
     # run_mot_on_video(trackers, 'data/pieski.mp4', areas_MOT_3)
     # run_mot_on_video(trackers, 'data/drone.mp4', areas_MOT_4)
     # run_mot_on_video(trackers, 'data/nascar_01.mp4', areas_MOT_5)
-    run_mot_on_video(trackers, 'data/race.mp4', areas_MOT_6)
+    # run_mot_on_video(trackers, 'data/race.mp4', areas_MOT_6)
